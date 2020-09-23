@@ -9,9 +9,10 @@ from stocktrends import Renko
 import statsmodels.api as sm
 import time
 import copy
+import traceback
 
 #initiating API connection and defining trade parameters
-token_path = "D:\\Trading\\key.txt"
+token_path = "C:\\fxcmkey.txt"
 con = fxcmpy.fxcmpy(access_token = open(token_path,'r').read(), log_level = 'error', server='demo')
 
 #defining strategy parameters
@@ -66,7 +67,8 @@ def renko_DF(DF):
     df.columns = ["date","open","close","high","low","volume"]
     df2 = Renko(df)
     df2.brick_size = round(ATR(DF,120)["ATR"][-1],4)
-    renko_df = df2.get_bricks()
+    #renko_df = df2.get_bricks() Joy Pinto 20200924 
+    renko_df = df2.get_ohlc_data() # Replaced with get_ohlc_data()
     renko_df["bar_num"] = np.where(renko_df["uptrend"]==True,1,np.where(renko_df["uptrend"]==False,-1,0))
     for i in range(1,len(renko_df["bar_num"])):
         if renko_df["bar_num"][i]>0 and renko_df["bar_num"][i-1]>0:
@@ -154,13 +156,14 @@ def main():
                 con.open_trade(symbol=currency, is_buy=False, is_in_pips=True, amount=pos_size, 
                                time_in_force='GTC', stop=-8, trailing_step =True, order_type='AtMarket')
                 print("New short position initiated for ", currency)
-    except:
+    except Exception:
+        traceback.print_exc()
         print("error encountered....skipping this iteration")
 
 
 # Continuous execution        
 starttime=time.time()
-timeout = time.time() + 60*60*1  # 60 seconds times 60 meaning the script will run for 1 hr
+timeout = time.time() + 5*60*1  # 60 seconds times 60 meaning the script will run for 1 hr
 while time.time() <= timeout:
     try:
         print("passthrough at ",time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
